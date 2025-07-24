@@ -83,7 +83,19 @@ module.exports = {
   		},
   		fontFamily: {
   			sans: [
-  				'Inter var',
+  				'Inter',
+  				'-apple-system',
+  				'BlinkMacSystemFont',
+  				'SF Pro Display',
+  				'SF Pro Text',
+  				'Helvetica Neue',
+  				'sans-serif'
+  			],
+  			display: [
+  				'SF Pro Display',
+  				'Inter',
+  				'-apple-system',
+  				'BlinkMacSystemFont',
   				'sans-serif'
   			]
   		},
@@ -91,7 +103,9 @@ module.exports = {
   			'fade-in': 'fade-in 0.5s ease-out',
   			'slide-up': 'slide-up 0.5s ease-out',
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'bounce-gentle': 'bounce-gentle 2s infinite',
+  			'pulse-gentle': 'pulse-gentle 2s infinite'
   		},
   		keyframes: {
   			'fade-in': {
@@ -127,6 +141,24 @@ module.exports = {
   				to: {
   					height: '0'
   				}
+  			},
+  			'bounce-gentle': {
+  				'0%, 100%': {
+  					transform: 'translateY(0)',
+  					animationTimingFunction: 'cubic-bezier(0.8, 0, 1, 1)'
+  				},
+  				'50%': {
+  					transform: 'translateY(-5px)',
+  					animationTimingFunction: 'cubic-bezier(0, 0, 0.2, 1)'
+  				}
+  			},
+  			'pulse-gentle': {
+  				'0%, 100%': {
+  					opacity: '1'
+  				},
+  				'50%': {
+  					opacity: '0.8'
+  				}
   			}
   		},
   		borderRadius: {
@@ -137,4 +169,4 @@ module.exports = {
   	}
   },
   plugins: [require("tailwindcss-animate")],
-} 
+}

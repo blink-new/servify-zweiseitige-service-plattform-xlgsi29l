@@ -1,64 +1,126 @@
-import { useState, useEffect } from 'react'
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
-import { LandingPage } from '@/pages/LandingPage'
-import { Toaster } from '@/components/ui/toaster'
-import { blink } from '@/blink/client'
-import type { User } from '@/types'
+import React, { useState, useEffect } from 'react';
+import { createClient } from './blink/client';
+import RoleSelection from './components/onboarding/RoleSelection';
+import AuthScreen from './components/auth/AuthScreen';
+import CustomerHome from './components/customer/CustomerHome';
+import ProviderHome from './components/provider/ProviderHome';
+import { User } from './types';
+
+// Initialize Blink client
+const blink = createClient({
+  projectId: 'servify-zweiseitige-service-plattform-xlgsi29l',
+  authRequired: false // We'll handle auth manually for role-based flow
+});
+
+type AppState = 'role-selection' | 'auth' | 'customer-home' | 'provider-home';
 
 function App() {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [isDark, setIsDark] = useState(false)
+  const [appState, setAppState] = useState<AppState>('role-selection');
+  const [selectedRole, setSelectedRole] = useState<'customer' | 'provider' | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = blink.auth.onAuthStateChanged((state) => {
-      setUser(state.user as User | null)
-      setLoading(state.isLoading)
-    })
-    return unsubscribe
-  }, [])
+    // Check if user is already authenticated
+    const checkAuth = async () => {
+      try {
+        // In a real app, check Blink auth state
+        const savedUser = localStorage.getItem('servify-user');
+        if (savedUser) {
+          const userData = JSON.parse(savedUser);
+          setUser(userData);
+          setSelectedRole(userData.role);
+          setAppState(userData.role === 'customer' ? 'customer-home' : 'provider-home');
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handleSearch = (query: string, category?: string) => {
-    console.log('Search:', query, category)
-    // TODO: Implement search functionality
-  }
+    checkAuth();
+  }, []);
 
-  const handleToggleTheme = () => {
-    setIsDark(!isDark)
-    document.documentElement.classList.toggle('dark')
-  }
+  const handleRoleSelect = (role: 'customer' | 'provider') => {
+    setSelectedRole(role);
+    setAppState('auth');
+  };
 
-  if (loading) {
+  const handleAuthSuccess = (userData: User) => {
+    setUser(userData);
+    // Save user data locally (in real app, this would be handled by Blink SDK)
+    localStorage.setItem('servify-user', JSON.stringify(userData));
+    setAppState(userData.role === 'customer' ? 'customer-home' : 'provider-home');
+  };
+
+  const handleBackToRoleSelection = () => {
+    setSelectedRole(null);
+    setAppState('role-selection');
+  };
+
+  const handleServiceSelect = (service: any) => {
+    console.log('Service selected:', service);
+    // Navigate to service detail page
+  };
+
+  const handleCreateService = () => {
+    console.log('Create service clicked');
+    // Navigate to service creation page
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setSelectedRole(null);
+    localStorage.removeItem('servify-user');
+    setAppState('role-selection');
+  };
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mx-auto">
-            <span className="text-white font-bold text-lg">S</span>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-4 mx-auto ios-shadow-lg animate-pulse">
+            <span className="text-2xl font-bold text-white">S</span>
           </div>
-          <div className="text-lg font-medium">Servify wird geladen...</div>
+          <p className="text-muted-foreground">Servify wird geladen...</p>
         </div>
       </div>
-    )
+    );
   }
 
-  return (
-    <div className={`min-h-screen bg-background ${isDark ? 'dark' : ''}`}>
-      <Header 
-        user={user} 
-        onSearch={handleSearch}
-        onToggleTheme={handleToggleTheme}
-        isDark={isDark}
-      />
-      
-      <main>
-        <LandingPage onSearch={handleSearch} />
-      </main>
-      
-      <Footer />
-      <Toaster />
-    </div>
-  )
+  switch (appState) {
+    case 'role-selection':
+      return <RoleSelection onRoleSelect={handleRoleSelect} />;
+    
+    case 'auth':
+      return (
+        <AuthScreen
+          role={selectedRole!}
+          onBack={handleBackToRoleSelection}
+          onAuthSuccess={handleAuthSuccess}
+        />
+      );
+    
+    case 'customer-home':
+      return (
+        <CustomerHome
+          user={user!}
+          onServiceSelect={handleServiceSelect}
+        />
+      );
+    
+    case 'provider-home':
+      return (
+        <ProviderHome
+          user={user!}
+          onCreateService={handleCreateService}
+        />
+      );
+    
+    default:
+      return <RoleSelection onRoleSelect={handleRoleSelect} />;
+  }
 }
 
-export default App
+export default App;
